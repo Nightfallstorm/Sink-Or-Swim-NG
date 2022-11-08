@@ -31,6 +31,5 @@ namespace logger = SKSE::log;
 
 namespace stl
 {
-    using nonstd::span;
     using SKSE::stl::report_and_fail;
 }

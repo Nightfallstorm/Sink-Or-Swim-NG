@@ -35,12 +35,6 @@
         return false;
     }
 
-    const auto ver = a_skse->RuntimeVersion();
-    if (ver < SKSE::RUNTIME_1_5_39) {
-        logger::critical(FMT_STRING("Unsupported runtime version {}"), ver.string());
-        return false;
-    }
-
     return true;
 }
 
@@ -125,7 +119,7 @@ private:
             }
         };
 
-        auto activeEffects = a_this->GetActiveEffectList();
+        auto activeEffects = a_this->GetMagicTarget()->GetActiveEffectList();
         isHeavy = FALSE;  // set to false on logic start
         if (submergedLevel >= 0.69) {
             a_this->RemoveSpell(WaterSlowdownBeeg);
@@ -142,10 +136,10 @@ private:
                             } else {
                                 a_this->GetCharController()->gravity = 0.20f;    // set gravity so we "float" when submerged, dont let it reset
                                 isHeavy = TRUE;
-                                if (!a_this->pad11) {  // we only need this to run ONCE when meeting the condition
+								if (!a_this->GetActorRuntimeData().pad1EC) {	// we only need this to run ONCE when meeting the condition
                                     const RE::hkVector4 hkv = { -1.00f, -1.00f, -1.00f, -1.00f };
                                     a_this->GetCharController()->SetLinearVelocityImpl(hkv);
-                                    a_this->pad11 = TRUE;  // this is a (presumably) unused variable that i am putting to use
+									a_this->GetActorRuntimeData().pad1EC = TRUE;	// this is a (presumably) unused variable that i am putting to use
                                     goto JustFuckingLeave;
                                 }
                             }
@@ -182,7 +176,7 @@ private:
                 logger::info("Invalid CharController ptr, skipping gravity code.");
             } else {
                 a_this->GetCharController()->gravity = 1.00f;
-                a_this->pad11 = FALSE;  // set this to false when NOT meeting our condition
+				a_this->GetActorRuntimeData().pad1EC = FALSE;  // set this to false when NOT meeting our condition
             };
         }
     JustFuckingLeave:
@@ -191,6 +185,17 @@ private:
     static inline REL::Relocation<decltype(GetSubmergeLevel)> _GetSubmergeLevel;
 };
 
+extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
+	SKSE::PluginVersionData v;
+	v.PluginVersion(1);
+	v.PluginName("SinkOrSwim");
+	v.AuthorName("LokiWasTaken");
+	v.UsesAddressLibrary(true);
+	v.CompatibleVersions({ SKSE::RUNTIME_SSE_LATEST_AE });
+	v.UsesNoStructs(true);
+
+	return v;
+}();
 
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a_skse)
 {
